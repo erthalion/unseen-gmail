@@ -10,14 +10,15 @@ password = "password"
 
 config = defaultSettingsIMAPSSL { sslMaxLineLength = 100000 }
 
-unseenMessages mailBox = do
-    connection <- connectIMAPSSLWithSettings imapServer config
-    login connection username password
+unseenMessages connection mailBox = do
     select connection mailBox
     msgs <- search connection [NOTs $ FLAG Seen]
     return (length msgs)
 
 main = do
-    newInbox <- unseenMessages "Inbox"
-    newSpam <- unseenMessages "[Gmail]/Spam"
+    connection <- connectIMAPSSLWithSettings imapServer config
+    login connection username password
+
+    newInbox <- unseenMessages connection "Inbox"
+    newSpam <- unseenMessages connection "[Gmail]/Spam"
     putStrLn $ (show newInbox) ++ "/" ++ (show newSpam)
