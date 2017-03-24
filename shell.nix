@@ -1,14 +1,26 @@
-with (import <nixpkgs> {}).pkgs;
-let pkg = haskellngPackages.callPackage
-            ({ mkDerivation, base, HaskellNet, HaskellNet-SSL, stdenv }:
-             mkDerivation {
-               pname = "unseen-gmail";
-               version = "0.1.0.0";
-               src = ./.;
-               isLibrary = false;
-               isExecutable = true;
-               buildDepends = [ base HaskellNet HaskellNet-SSL ];
-               license = stdenv.lib.licenses.gpl3;
-             }) {};
+{ nixpkgs ? import <nixpkgs> {}, compiler ? "default" }:
+
+let
+
+  inherit (nixpkgs) pkgs;
+
+  f = { mkDerivation, base, HaskellNet, HaskellNet-SSL, stdenv }:
+      mkDerivation {
+        pname = "unseen-gmail";
+        version = "0.1.0.0";
+        src = ./.;
+        isLibrary = false;
+        isExecutable = true;
+        executableHaskellDepends = [ base HaskellNet HaskellNet-SSL ];
+        license = stdenv.lib.licenses.gpl3;
+      };
+
+  haskellPackages = if compiler == "default"
+                       then pkgs.haskellPackages
+                       else pkgs.haskell.packages.${compiler};
+
+  drv = haskellPackages.callPackage f {};
+
 in
-  pkg.env
+
+  if pkgs.lib.inNixShell then drv.env else drv
