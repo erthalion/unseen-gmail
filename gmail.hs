@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+import           Control.Exception
+import           System.IO
 import           Network.HaskellNet.IMAP.SSL
 import           Network.HaskellNet.Auth (AuthType(LOGIN))
 
@@ -15,10 +17,16 @@ unseenMessages connection mailBox = do
     msgs <- search connection [NOTs $ FLAG Seen]
     return (length msgs)
 
+withEcho echo action = do
+  old <- hGetEcho stdin
+  bracket_ (hSetEcho stdin echo) (hSetEcho stdin old) action
+
 main = do
+    password <- withEcho False getLine
     connection <- connectIMAPSSLWithSettings imapServer config
     login connection username password
 
     newInbox <- unseenMessages connection "Inbox"
     newSpam <- unseenMessages connection "[Gmail]/Spam"
-    putStrLn $ (show newInbox) ++ "/" ++ (show newSpam)
+    newPG <- unseenMessages connection "pgsql-important"
+    putStrLn $ (show newInbox) ++ "/" ++ (show newSpam) ++ "/" ++ (show newPG)
